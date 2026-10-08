@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -539,6 +540,69 @@ func writeCSV(path string, results []result) error {
 	return w.Error()
 }
 
+// quotaInfo mirrors the fields of GET /v1/quota that matter for this test.
+// The SDK's QuotaResponse only reads the legacy `quota_limit` / `bytes_used`
+// fields, while this API reports the plan quota in the *_mb fields, so the raw
+// response is parsed here instead.
+type quotaInfo struct {
+	Plan              string  `json:"plan"`
+	QuotaLimitMB      float64 `json:"quota_limit_mb"`
+	QuotaUsedMB       float64 `json:"quota_used_mb"`
+	QuotaRemainingMB  float64 `json:"quota_remaining_mb"`
+	BytesLimit        int64   `json:"bytes_limit"`
+	RemainingBytes    int64   `json:"remaining_bytes"`
+	NextResetDate     string  `json:"next_reset_date"`
+	HasPendingLicense bool    `json:"has_pending_license"`
+	Capabilities      struct {
+		MaxFileMB float64  `json:"max_file_mb"`
+		Formats   []string `json:"formats"`
+	} `json:"capabilities"`
+}
+
+// fetchQuota performs a signed GET /v1/quota through hc, so the call goes
+// through the rate-limited transport and is counted like any other API hit.
+// It returns the HTTP status code (0 on transport errors) alongside the error.
+func fetchQuota(ctx context.Context, hc *http.Client, cfg *config.Config) (*quotaInfo, int, error) {
+	const path = "/v1/quota"
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(cfg.SmallPictBaseURL, "/")+path, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("X-API-Key", cfg.SmallPictAPIKey)
+	if cfg.SmallPictSecretKey != "" {
+		ts := strconv.FormatInt(time.Now().Unix(), 10)
+		sig := smallpict.HMACSHA256Hex(cfg.SmallPictSecretKey,
+			smallpict.BuildStringToSign(http.MethodGet, path, ts, smallpict.EmptySHA256))
+		req.Header.Set("X-Timestamp", ts)
+		req.Header.Set("X-Signature", sig)
+	} else {
+		req.Header.Set("Authorization", "Bearer "+cfg.SmallPictAPIKey)
+	}
+
+	resp, err := hc.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		msg := string(body)
+		if len(msg) > 200 {
+			msg = msg[:200] + "..."
+		}
+		return nil, resp.StatusCode, fmt.Errorf("HTTP %d: %s", resp.StatusCode, smallpict.SanitizeMessage(msg))
+	}
+
+	var q quotaInfo
+	if err := json.Unmarshal(body, &q); err != nil {
+		return nil, resp.StatusCode, fmt.Errorf("invalid quota response: %w", err)
+	}
+	return &q, resp.StatusCode, nil
+}
+
 // ---------------------------------------------------------------------------
 // main
 // ---------------------------------------------------------------------------
@@ -626,19 +690,45 @@ func main() {
 	}()
 
 	if !*skipQuota {
-		q, err := client.GetQuota(ctx)
+		q, status, err := fetchQuota(ctx, apiHTTP, cfg)
 		if err != nil {
 			fmt.Printf("Quota        : failed to check (%v)\n", err)
-			if smallpict.IsUnauthorized(err) {
+			if status == http.StatusUnauthorized {
 				fmt.Fprintln(os.Stderr, "Invalid API key / secret.")
 				os.Exit(1)
 			}
 		} else {
-			fmt.Printf("Quota        : plan=%s used %s of %s (%.1f%%)\n",
-				q.Plan, human(q.BytesUsed), human(q.QuotaLimit), q.QuotaPercentage)
-			if q.QuotaLimit > 0 && q.QuotaLimit-q.BytesUsed < estBytes {
-				fmt.Printf("⚠️  Remaining quota %s < estimated need %s. The test will likely stop (402).\n",
-					human(q.QuotaLimit-q.BytesUsed), human(estBytes))
+			fmt.Printf("Quota        : plan=%s used %.0f MB of %.0f MB (remaining %.0f MB, resets %s)\n",
+				q.Plan, q.QuotaUsedMB, q.QuotaLimitMB, q.QuotaRemainingMB, q.NextResetDate)
+			if q.Capabilities.MaxFileMB > 0 {
+				fmt.Printf("Plan limits  : max %.0f MB per file | formats: %s\n",
+					q.Capabilities.MaxFileMB, strings.Join(q.Capabilities.Formats, ", "))
+			}
+
+			estMB := float64(estBytes) / (1024 * 1024)
+			if q.QuotaLimitMB > 0 && q.QuotaRemainingMB < estMB {
+				fmt.Printf("⚠️  Remaining quota %.0f MB < estimated need %.0f MB. The test will likely stop (402).\n",
+					q.QuotaRemainingMB, estMB)
+			}
+			if q.QuotaLimitMB > 0 && (q.BytesLimit == 0 || q.RemainingBytes == 0) {
+				fmt.Printf("⚠️  quota_limit_mb is %.0f but bytes_limit=%d / remaining_bytes=%d. The server may reject\n"+
+					"   requests with QUOTA_EXCEEDED even though quota is available (possible plan provisioning issue).\n",
+					q.QuotaLimitMB, q.BytesLimit, q.RemainingBytes)
+			}
+			if q.HasPendingLicense {
+				fmt.Println("⚠️  The account has a pending license; the plan may not be fully active yet.")
+			}
+			if maxMB := q.Capabilities.MaxFileMB; maxMB > 0 {
+				oversize := 0
+				for _, s := range samples {
+					if float64(len(s.data)) > maxMB*1024*1024 {
+						oversize++
+					}
+				}
+				if oversize > 0 {
+					fmt.Printf("⚠️  %d image(s) exceed the plan's %.0f MB file limit and will fail (use -max-file-mb %.0f to skip them).\n",
+						oversize, maxMB, maxMB)
+				}
 			}
 		}
 	}

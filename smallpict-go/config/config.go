@@ -8,17 +8,17 @@ import (
 )
 
 type Config struct {
-	AppName           string
-	Port              string
-	DBHost            string
-	DBPort            string
-	DBName            string
-	DBUser            string
-	DBPass            string
-	DBSSLMode         string
-	SmallPictMode     string
-	SmallPictBaseURL  string
-	SmallPictAPIKey   string
+	AppName            string
+	Port               string
+	DBHost             string
+	DBPort             string
+	DBName             string
+	DBUser             string
+	DBPass             string
+	DBSSLMode          string
+	SmallPictMode      string
+	SmallPictBaseURL   string
+	SmallPictAPIKey    string
 	SmallPictSecretKey string
 	SmallPictFormat       string
 	SmallPictQuality      int
@@ -36,9 +36,9 @@ var Cfg *Config
 func LoadConfig() *Config {
 	_ = godotenv.Load()
 
-	quality, _ := strconv.Atoi(getEnv("SMALLPICT_QUALITY", "80"))
+	quality, _ := strconv.Atoi(getEnv("SMALLPICT_QUALITY", "75"))
 	if quality <= 0 {
-		quality = 80
+		quality = 75
 	}
 
 	maxDim, _ := strconv.Atoi(getEnv("SMALLPICT_MAX_DIMENSION", "1600"))

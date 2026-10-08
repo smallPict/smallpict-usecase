@@ -9,3 +9,4 @@ uploads/
 *.out
 main
 smallpict-go
+loadtest-results.csv

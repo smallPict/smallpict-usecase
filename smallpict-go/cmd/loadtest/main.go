@@ -35,7 +35,7 @@ import (
 
 	"smallpict-go/config"
 
-	"github.com/tuxnoob/smallpict-go"
+	"github.com/smallpict/smallpict-go"
 )
 
 // ---------------------------------------------------------------------------

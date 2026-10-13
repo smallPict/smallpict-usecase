@@ -87,6 +87,15 @@ pub fn string_to_image_format(format_str: &str) -> ImageFormat {
     }
 }
 
+pub fn string_to_fit_mode(fit_str: &str) -> smallpict::models::FitMode {
+    match fit_str.to_lowercase().as_str() {
+        "contain" => smallpict::models::FitMode::Contain,
+        "inside" => smallpict::models::FitMode::Inside,
+        "outside" => smallpict::models::FitMode::Outside,
+        _ => smallpict::models::FitMode::Cover,
+    }
+}
+
 pub async fn upload_smallpict(
     pool: &PgPool,
     config: &Config,
@@ -122,12 +131,29 @@ pub async fn upload_smallpict(
             .build()
             .map_err(|e| format!("SmallPict client error: {}", e))?;
 
-        let opt_opts = OptimizeOptions::builder()
+        let mut opt_builder = OptimizeOptions::builder()
             .filename(&timestamped_filename)
             .mime_type(&mime_type)
             .format(string_to_image_format(&config.smallpict_format))
             .quality(config.smallpict_quality)
-            .build();
+            .fit(string_to_fit_mode(&config.smallpict_fit))
+            .lossless(config.smallpict_lossless)
+            .strip_metadata(config.smallpict_strip_metadata);
+
+        if let Some(dim) = config.smallpict_max_dimension {
+            if dim > 0 {
+                opt_builder = opt_builder.max_width(dim).max_height(dim);
+            }
+        } else {
+            if let Some(w) = config.smallpict_max_width {
+                opt_builder = opt_builder.max_width(w);
+            }
+            if let Some(h) = config.smallpict_max_height {
+                opt_builder = opt_builder.max_height(h);
+            }
+        }
+
+        let opt_opts = opt_builder.build();
 
         let result = sp_client
             .optimize(&data, Some(opt_opts))

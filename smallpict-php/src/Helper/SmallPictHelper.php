@@ -86,17 +86,18 @@ class SmallPictHelper
             $sdkConfig = new SdkConfig($config->smallPictApiKey, $config->smallPictSecretKey, $config->smallPictBaseUrl);
             $client = new Client($sdkConfig);
 
-            $optOptions = new OptimizeOptions(
-                $config->smallPictFormat,
-                $config->smallPictQuality,
-                null,
-                null,
-                'cover',
-                false,
-                true,
-                $timestampedFilename,
-                $mimeType
-            );
+            $optOptions = OptimizeOptions::fromArray([
+                'format' => $config->smallPictFormat,
+                'quality' => $config->smallPictQuality,
+                'max_dimension' => $config->smallPictMaxDimension,
+                'max_width' => $config->smallPictMaxWidth,
+                'max_height' => $config->smallPictMaxHeight,
+                'fit' => $config->smallPictFit,
+                'lossless' => $config->smallPictLossless,
+                'strip_metadata' => $config->smallPictStripMetadata,
+                'filename' => $timestampedFilename,
+                'mime_type' => $mimeType,
+            ]);
 
             $stream = fopen('php://temp', 'r+');
             fwrite($stream, $data);

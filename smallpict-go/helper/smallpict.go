@@ -124,11 +124,23 @@ func ProcessUpload(fileHeader *multipart.FileHeader, base64Input string, customF
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 
+		maxWidth := cfg.SmallPictMaxWidth
+		maxHeight := cfg.SmallPictMaxHeight
+		if cfg.SmallPictMaxDimension > 0 {
+			maxWidth = cfg.SmallPictMaxDimension
+			maxHeight = cfg.SmallPictMaxDimension
+		}
+
 		opts := &smallpict.OptimizeOptions{
-			Filename: timestampedFilename,
-			MIMEType: mimeType,
-			Format:   cfg.SmallPictFormat,
-			Quality:  cfg.SmallPictQuality,
+			Filename:      timestampedFilename,
+			MIMEType:      mimeType,
+			Format:        cfg.SmallPictFormat,
+			Quality:       cfg.SmallPictQuality,
+			MaxWidth:      maxWidth,
+			MaxHeight:     maxHeight,
+			Fit:           cfg.SmallPictFit,
+			Lossless:      cfg.SmallPictLossless,
+			StripMetadata: cfg.SmallPictStripMetadata,
 		}
 
 		result, err := client.Optimize(ctx, bytes.NewReader(data), opts)

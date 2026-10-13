@@ -12,5 +12,5 @@ WORKDIR /app
 RUN apk --no-cache add ca-certificates tzdata
 COPY --from=builder /app/smallpict-go .
 
-EXPOSE 8004
+EXPOSE 8001
 CMD ["./smallpict-go"]

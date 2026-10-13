@@ -14,6 +14,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY --from=builder /app/target/release/smallpict-rust /app/smallpict-rust
 
-EXPOSE 8001
+EXPOSE 8007
 
 CMD ["/app/smallpict-rust"]

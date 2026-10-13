@@ -85,7 +85,13 @@ module SmallPictHelper
         filename: timestamped_filename,
         mime_type: mime_type,
         format: AppConfig.smallpict_format,
-        quality: AppConfig.smallpict_quality
+        quality: AppConfig.smallpict_quality,
+        max_dimension: AppConfig.smallpict_max_dimension,
+        max_width: AppConfig.smallpict_max_width,
+        max_height: AppConfig.smallpict_max_height,
+        fit: AppConfig.smallpict_fit,
+        lossless: AppConfig.smallpict_lossless,
+        strip_metadata: AppConfig.smallpict_strip_metadata
       )
 
       if result.upload_url && !result.upload_url.empty?

@@ -80,9 +80,19 @@ SMALLPICT_SECRET_KEY=your_secret_key_here
 SMALLPICT_FORMAT=auto # auto | webp | avif | jpeg | png
 SMALLPICT_QUALITY=80 # 1 - 100
 
+# SmallPict API New Features
+SMALLPICT_MAX_DIMENSION=1600 # Max bounding dimension (1600, 1920, 2048, 2560, or 0 to keep full size / disable downscaling)
+SMALLPICT_MAX_WIDTH=1920 # Max bounding width constraint in pixels
+SMALLPICT_MAX_HEIGHT=1080 # Max bounding height constraint in pixels
+SMALLPICT_FIT=cover # cover | contain | inside | outside
+SMALLPICT_LOSSLESS=false # true | false
+SMALLPICT_STRIP_METADATA=true # Strip EXIF, GPS, camera metadata (true | false)
+
 # Local Storage Directory (used when SMALLPICT_MODE=locale)
 UPLOAD_PATH=./uploads
 ```
+
+> 💡 **Docker Compose**: Every service directory now contains its own ready-to-run `docker-compose.yml` bundling the application and a dedicated PostgreSQL database container with healthchecks and volume persistence. You can spin up any service with `docker compose up -d`.
 
 ---
 

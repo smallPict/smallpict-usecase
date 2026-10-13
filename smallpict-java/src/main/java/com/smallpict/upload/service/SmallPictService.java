@@ -1,6 +1,7 @@
 package com.smallpict.upload.service;
 
 import com.smallpict.SmallPictClient;
+import com.smallpict.models.FitMode;
 import com.smallpict.models.ImageFormat;
 import com.smallpict.models.JobStatusResult;
 import com.smallpict.models.OptimizeOptions;
@@ -104,12 +105,26 @@ public class SmallPictService {
                     .timeout(Duration.ofSeconds(60))
                     .build();
 
-            OptimizeOptions options = OptimizeOptions.builder()
+            OptimizeOptions.Builder optBuilder = OptimizeOptions.builder()
                     .filename(timestampedFilename)
                     .mimeType(mimeType)
                     .format(parseImageFormat(appConfig.getFormat()))
                     .quality(appConfig.getQuality())
-                    .build();
+                    .fit(parseFitMode(appConfig.getFit()))
+                    .lossless(appConfig.isLossless())
+                    .stripMetadata(appConfig.isStripMetadata());
+
+            if (appConfig.getMaxDimension() != null && appConfig.getMaxDimension() > 0) {
+                optBuilder.maxDimension(appConfig.getMaxDimension());
+            }
+            if (appConfig.getMaxWidth() != null && appConfig.getMaxWidth() > 0) {
+                optBuilder.maxWidth(appConfig.getMaxWidth());
+            }
+            if (appConfig.getMaxHeight() != null && appConfig.getMaxHeight() > 0) {
+                optBuilder.maxHeight(appConfig.getMaxHeight());
+            }
+
+            OptimizeOptions options = optBuilder.build();
 
             log.info("Requesting SmallPict optimization for: {}", timestampedFilename);
             OptimizeResult result = client.optimize(data, options);
@@ -251,6 +266,16 @@ public class SmallPictService {
             case "jpeg", "jpg" -> ImageFormat.JPEG;
             case "png" -> ImageFormat.PNG;
             default -> ImageFormat.AUTO;
+        };
+    }
+
+    private FitMode parseFitMode(String fit) {
+        if (fit == null) return FitMode.COVER;
+        return switch (fit.toLowerCase()) {
+            case "contain" -> FitMode.CONTAIN;
+            case "inside" -> FitMode.INSIDE;
+            case "outside" -> FitMode.OUTSIDE;
+            default -> FitMode.COVER;
         };
     }
 

@@ -16,6 +16,12 @@ public class AppConfig implements WebMvcConfigurer {
     private String secretKey = "";
     private String format = "auto";
     private int quality = 80;
+    private Integer maxDimension = 1600;
+    private Integer maxWidth = 1920;
+    private Integer maxHeight = 1080;
+    private String fit = "cover";
+    private boolean lossless = false;
+    private boolean stripMetadata = true;
     private String uploadPath = "./uploads";
 
     public AppConfig() {
@@ -67,6 +73,54 @@ public class AppConfig implements WebMvcConfigurer {
 
     public void setQuality(int quality) {
         this.quality = quality;
+    }
+
+    public Integer getMaxDimension() {
+        return maxDimension;
+    }
+
+    public void setMaxDimension(Integer maxDimension) {
+        this.maxDimension = maxDimension;
+    }
+
+    public Integer getMaxWidth() {
+        return maxWidth;
+    }
+
+    public void setMaxWidth(Integer maxWidth) {
+        this.maxWidth = maxWidth;
+    }
+
+    public Integer getMaxHeight() {
+        return maxHeight;
+    }
+
+    public void setMaxHeight(Integer maxHeight) {
+        this.maxHeight = maxHeight;
+    }
+
+    public String getFit() {
+        return fit;
+    }
+
+    public void setFit(String fit) {
+        this.fit = fit;
+    }
+
+    public boolean isLossless() {
+        return lossless;
+    }
+
+    public void setLossless(boolean lossless) {
+        this.lossless = lossless;
+    }
+
+    public boolean isStripMetadata() {
+        return stripMetadata;
+    }
+
+    public void setStripMetadata(boolean stripMetadata) {
+        this.stripMetadata = stripMetadata;
     }
 
     public String getUploadPath() {

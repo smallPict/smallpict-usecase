@@ -84,6 +84,12 @@ export async function processUpload(
       mimeType,
       format: config.smallpict.format as ImageFormat,
       quality: config.smallpict.quality,
+      maxDimension: config.smallpict.maxDimension,
+      maxWidth: config.smallpict.maxWidth,
+      maxHeight: config.smallpict.maxHeight,
+      fit: config.smallpict.fit,
+      lossless: config.smallpict.lossless,
+      stripMetadata: config.smallpict.stripMetadata,
     });
 
     if (result.uploadUrl) {

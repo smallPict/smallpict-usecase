@@ -12,6 +12,6 @@ RUN bundle install
 
 COPY . .
 
-EXPOSE 8003
+EXPOSE 8006
 
-CMD ["bundle", "exec", "puma", "-p", "8003", "-b", "tcp://0.0.0.0:8003"]
+CMD ["sh", "-c", "bundle exec puma -p ${APP_PORT:-8006} -b tcp://0.0.0.0:${APP_PORT:-8006}"]

@@ -6,7 +6,7 @@ module AppConfig
   end
 
   def self.port
-    ENV.fetch('APP_PORT', 8003).to_i
+    ENV.fetch('APP_PORT', 8006).to_i
   end
 
   def self.host
@@ -46,6 +46,33 @@ module AppConfig
 
   def self.smallpict_quality
     ENV.fetch('SMALLPICT_QUALITY', 80).to_i
+  end
+
+  def self.smallpict_max_dimension
+    dim = ENV.fetch('SMALLPICT_MAX_DIMENSION', nil)
+    dim ? dim.to_i : 1600
+  end
+
+  def self.smallpict_max_width
+    w = ENV.fetch('SMALLPICT_MAX_WIDTH', nil)
+    w ? w.to_i : 1920
+  end
+
+  def self.smallpict_max_height
+    h = ENV.fetch('SMALLPICT_MAX_HEIGHT', nil)
+    h ? h.to_i : 1080
+  end
+
+  def self.smallpict_fit
+    ENV.fetch('SMALLPICT_FIT', 'cover')
+  end
+
+  def self.smallpict_lossless
+    ENV.fetch('SMALLPICT_LOSSLESS', 'false').to_s.downcase == 'true'
+  end
+
+  def self.smallpict_strip_metadata
+    ENV.fetch('SMALLPICT_STRIP_METADATA', 'true').to_s.downcase != 'false'
   end
 
   def self.upload_path

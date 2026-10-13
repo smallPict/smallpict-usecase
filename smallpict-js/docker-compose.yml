@@ -1,0 +1,56 @@
+services:
+  app:
+    build: .
+    container_name: smallpict-js
+    restart: always
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./uploads:/app/uploads
+    environment:
+      - APP_NAME=SmallPict Node.js Service
+      - SERVER_PORT=8003
+      # Database
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=smallpict
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_SSLMODE=disable
+      # SmallPict
+      - SMALLPICT_MODE=locale # locale | cdn
+      - SMALLPICT_BASE_URL=https://api.smallpict.app
+      - SMALLPICT_API_KEY=<your_api_key_here>
+      - SMALLPICT_SECRET_KEY=<your_secret_key_here>
+      - SMALLPICT_FORMAT=auto # auto | webp | avif | jpeg | png
+      - SMALLPICT_QUALITY=80
+      # SmallPict API New Features
+      - SMALLPICT_MAX_DIMENSION=1600 # 1600 | 1920 | 2048 | 2560 | 0 (disabled)
+      - SMALLPICT_MAX_WIDTH=1920
+      - SMALLPICT_MAX_HEIGHT=1080
+      - SMALLPICT_FIT=cover # cover | contain | inside | outside
+      - SMALLPICT_LOSSLESS=false # true | false
+      - SMALLPICT_STRIP_METADATA=true # true | false
+      - UPLOAD_PATH=./uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    container_name: smallpict-js-db
+    restart: always
+    environment:
+      - POSTGRES_DB=smallpict
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d smallpict"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

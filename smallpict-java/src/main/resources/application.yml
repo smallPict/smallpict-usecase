@@ -32,4 +32,10 @@ smallpict:
   secret-key: ${SMALLPICT_SECRET_KEY:}
   format: ${SMALLPICT_FORMAT:auto}
   quality: ${SMALLPICT_QUALITY:80}
+  max-dimension: ${SMALLPICT_MAX_DIMENSION:1600}
+  max-width: ${SMALLPICT_MAX_WIDTH:1920}
+  max-height: ${SMALLPICT_MAX_HEIGHT:1080}
+  fit: ${SMALLPICT_FIT:cover}
+  lossless: ${SMALLPICT_LOSSLESS:false}
+  strip-metadata: ${SMALLPICT_STRIP_METADATA:true}
   upload-path: ${UPLOAD_PATH:./uploads}

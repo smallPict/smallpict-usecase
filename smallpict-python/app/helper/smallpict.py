@@ -96,6 +96,12 @@ async def upload(
             mime_type=mime_type,
             format=settings.SMALLPICT_FORMAT,
             quality=settings.SMALLPICT_QUALITY,
+            max_dimension=settings.SMALLPICT_MAX_DIMENSION,
+            max_width=settings.SMALLPICT_MAX_WIDTH,
+            max_height=settings.SMALLPICT_MAX_HEIGHT,
+            fit=settings.SMALLPICT_FIT,
+            lossless=settings.SMALLPICT_LOSSLESS,
+            strip_metadata=settings.SMALLPICT_STRIP_METADATA,
         )
 
         result = await client.optimize(data, options)

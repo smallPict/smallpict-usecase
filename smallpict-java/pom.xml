@@ -46,9 +46,9 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.github.tuxnoob</groupId>
+            <groupId>app.smallpict</groupId>
             <artifactId>smallpict-java</artifactId>
-            <version>0.0.2</version>
+            <version>0.0.6</version>
         </dependency>
     </dependencies>
 

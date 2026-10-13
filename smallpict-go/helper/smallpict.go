@@ -19,7 +19,7 @@ import (
 	"smallpict-go/model"
 
 	"github.com/google/uuid"
-	"github.com/tuxnoob/smallpict-go"
+	"github.com/smallpict/smallpict-go"
 )
 
 func ProcessUpload(fileHeader *multipart.FileHeader, base64Input string, customFilename string) (*model.Image, error) {

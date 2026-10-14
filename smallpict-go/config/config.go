@@ -1,34 +1,38 @@
 package config
 
 import (
+	"math/rand"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
 
+var AutoFormats = []string{"webp", "avif", "png", "jpeg", "jpg"}
+
 type Config struct {
-	AppName            string
-	Port               string
-	DBHost             string
-	DBPort             string
-	DBName             string
-	DBUser             string
-	DBPass             string
-	DBSSLMode          string
-	SmallPictMode      string
-	SmallPictBaseURL   string
-	SmallPictAPIKey    string
-	SmallPictSecretKey string
-	SmallPictFormat       string
-	SmallPictQuality      int
-	SmallPictMaxDimension int
-	SmallPictMaxWidth     int
-	SmallPictMaxHeight    int
-	SmallPictFit          string
-	SmallPictLossless     bool
+	AppName                string
+	Port                   string
+	DBHost                 string
+	DBPort                 string
+	DBName                 string
+	DBUser                 string
+	DBPass                 string
+	DBSSLMode              string
+	SmallPictMode          string
+	SmallPictBaseURL       string
+	SmallPictAPIKey        string
+	SmallPictSecretKey     string
+	SmallPictFormat        string
+	SmallPictQuality       int
+	SmallPictMaxDimension  int
+	SmallPictMaxWidth      int
+	SmallPictMaxHeight     int
+	SmallPictFit           string
+	SmallPictLossless      bool
 	SmallPictStripMetadata bool
-	UploadPath            string
+	UploadPath             string
 }
 
 var Cfg *Config
@@ -79,4 +83,11 @@ func getEnv(key, fallback string) string {
 		return val
 	}
 	return fallback
+}
+
+func (c *Config) ResolveFormat() string {
+	if strings.EqualFold(strings.TrimSpace(c.SmallPictFormat), "auto") {
+		return AutoFormats[rand.Intn(len(AutoFormats))]
+	}
+	return c.SmallPictFormat
 }

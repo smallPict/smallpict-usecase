@@ -259,10 +259,11 @@ func (r *runner) process(parent context.Context, seq int) result {
 		return res
 	}
 
+	targetFormat := r.cfg.ResolveFormat()
 	opts := &smallpict.OptimizeOptions{
 		Filename: filename,
 		MIMEType: s.mime,
-		Format:   r.cfg.SmallPictFormat,
+		Format:   targetFormat,
 		Quality:  r.cfg.SmallPictQuality,
 		MaxWidth: r.cfg.SmallPictMaxWidth,
 	}
@@ -272,6 +273,9 @@ func (r *runner) process(parent context.Context, seq int) result {
 		return fail(err)
 	}
 	res.format = out.Format
+	if res.format == "" {
+		res.format = targetFormat
+	}
 
 	if out.UploadURL != "" {
 		req, err := http.NewRequestWithContext(ctx, http.MethodPut, out.UploadURL, bytes.NewReader(s.data))
@@ -397,6 +401,7 @@ func printSummary(results []result, elapsed time.Duration, tr *apiTransport, pla
 	}
 	perFile := map[string]*agg{}
 
+	formatCounts := map[string]int{}
 	for _, r := range results {
 		a := perFile[r.file]
 		if a == nil {
@@ -409,6 +414,9 @@ func printSummary(results []result, elapsed time.Duration, tr *apiTransport, pla
 			a.ok++
 			lats = append(lats, r.latency)
 			origSum += r.origSize
+			if r.format != "" {
+				formatCounts[r.format]++
+			}
 			if r.compSize >= 0 {
 				compSum += r.compSize
 				compKnown++
@@ -463,6 +471,14 @@ func printSummary(results []result, elapsed time.Duration, tr *apiTransport, pla
 
 	if okN > 0 {
 		fmt.Printf("\nOriginal data processed : %s\n", human(origSum))
+		if len(formatCounts) > 0 {
+			var parts []string
+			for fmtName, count := range formatCounts {
+				parts = append(parts, fmt.Sprintf("%s=%d", fmtName, count))
+			}
+			sort.Strings(parts)
+			fmt.Printf("Formats processed       : %s\n", strings.Join(parts, ", "))
+		}
 		if compKnown > 0 {
 			fmt.Printf("Compression result      : average %s per image (%d images measured)\n", human(compSum/compKnown), compKnown)
 			fmt.Printf("≤ %s            : %d / %d (%.1f%%)\n", human(targetBytes), underTarget, compKnown, float64(underTarget)/float64(compKnown)*100)
@@ -609,6 +625,7 @@ func fetchQuota(ctx context.Context, hc *http.Client, cfg *config.Config) (*quot
 
 func main() {
 	dir := flag.String("dir", "../images", "folder containing the source images")
+	formatFlag := flag.String("format", "", "target format (auto, webp, avif, png, jpeg, jpg); defaults to SMALLPICT_FORMAT from .env")
 	maxFileMB := flag.Float64("max-file-mb", 0, "skip files larger than this (MB); 0 = no limit. Set according to your plan's upload limit")
 	total := flag.Int("total", 1500, "total number of compression jobs")
 	rpm := flag.Int("rpm", 60, "maximum API calls per minute (sandbox: adjust to your limit, subscription: 300)")
@@ -629,6 +646,9 @@ func main() {
 	}
 
 	cfg := config.LoadConfig()
+	if *formatFlag != "" {
+		cfg.SmallPictFormat = *formatFlag
+	}
 	if cfg.SmallPictAPIKey == "" {
 		fmt.Fprintln(os.Stderr, "SMALLPICT_API_KEY is empty. Set it in .env (run from the smallpict-go folder).")
 		os.Exit(2)
@@ -674,7 +694,11 @@ func main() {
 	fmt.Printf("Base URL     : %s\n", baseURL)
 	fmt.Printf("Images       : %d files from %s (average %s)\n", len(samples), *dir, human(sampleBytes/int64(len(samples))))
 	fmt.Printf("Total jobs   : %d  (estimated data %s)\n", *total, human(estBytes))
-	fmt.Printf("Options      : format=%s quality=%d max_width=%d\n", cfg.SmallPictFormat, cfg.SmallPictQuality, cfg.SmallPictMaxWidth)
+	formatDesc := cfg.SmallPictFormat
+	if strings.EqualFold(strings.TrimSpace(cfg.SmallPictFormat), "auto") {
+		formatDesc = fmt.Sprintf("auto (random: %s)", strings.Join(config.AutoFormats, ", "))
+	}
+	fmt.Printf("Options      : format=%s quality=%d max_width=%d\n", formatDesc, cfg.SmallPictQuality, cfg.SmallPictMaxWidth)
 	fmt.Printf("Rate limit   : %d API calls/min (1 image ≈ 2-4 calls: optimize + status polling)\n", *rpm)
 	fmt.Printf("Workers      : %d | verify download: %v\n", *workers, *verify)
 	fmt.Printf("Est. duration: ~%.0f min (at 3 calls/image)\n", float64(*total)*3/float64(*rpm))

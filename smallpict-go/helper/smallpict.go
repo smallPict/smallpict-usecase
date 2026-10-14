@@ -134,7 +134,7 @@ func ProcessUpload(fileHeader *multipart.FileHeader, base64Input string, customF
 		opts := &smallpict.OptimizeOptions{
 			Filename:      timestampedFilename,
 			MIMEType:      mimeType,
-			Format:        cfg.SmallPictFormat,
+			Format:        cfg.ResolveFormat(),
 			Quality:       cfg.SmallPictQuality,
 			MaxWidth:      maxWidth,
 			MaxHeight:     maxHeight,
